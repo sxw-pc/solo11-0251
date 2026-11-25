@@ -3,6 +3,7 @@ SCHEMA='''
 CREATE TABLE IF NOT EXISTS purpose_contracts(id TEXT PRIMARY KEY,tenant TEXT,profile TEXT,purpose TEXT,generation INTEGER,state TEXT);
 CREATE TABLE IF NOT EXISTS quota_windows(id TEXT PRIMARY KEY,tenant TEXT,capacity INTEGER,used INTEGER,start INTEGER,expires INTEGER);
 CREATE TABLE IF NOT EXISTS egress_grants(id TEXT PRIMARY KEY,contract TEXT,window TEXT,holder TEXT,limit_bytes INTEGER,used INTEGER,generation INTEGER,state TEXT);
+CREATE TABLE IF NOT EXISTS dispute_arbitrators(id TEXT PRIMARY KEY,tenant TEXT,actor TEXT,role TEXT,generation INTEGER,expires INTEGER,state TEXT);
 '''
 
 def handle(db,x):
@@ -23,7 +24,8 @@ def handle(db,x):
         if not c or c['state']!='active' or not p or p['state']!='active' or not w or w['tenant']!=c['tenant'] or not w['start']<=x['at']<w['expires']:
             return {'decision':'grant_unavailable'}
         observation=one(db,"SELECT * FROM dns_observations WHERE profile=? AND state='accepted' AND observed<=? AND expires>? ORDER BY generation DESC LIMIT 1",(p['id'],x['at'],x['at']))
-        if not observation or observation['profile_generation']!=p['generation']:
+        resolver=one(db,'SELECT * FROM resolver_policies WHERE id=?',(observation['resolver_id'],)) if observation else None
+        if not observation or observation['profile_generation']!=p['generation'] or not resolver or resolver['state']!='active' or resolver['generation']!=observation['resolver_generation']:
             return {'decision':'destination_unresolved'}
         allocated=one(db,"SELECT COALESCE(SUM(limit_bytes-used),0) n FROM egress_grants WHERE window=? AND state='active'",(x['window'],))['n']
         if x['limit_bytes']<=0 or allocated+w['used']+x['limit_bytes']>w['capacity']:
@@ -42,6 +44,13 @@ def handle(db,x):
             return {'decision':'transfer_denied'}
         db.execute('UPDATE egress_grants SET holder=?,generation=? WHERE id=?',(x['to_holder'],x['generation'],x['id']))
         return {'decision':'transferred'}
+    if op=='arbitrator':
+        if x['role']!='auditor' or x['expires']<=x['at'] or not x['actor']:
+            return {'decision':'invalid_arbitrator'}
+        old=one(db,'SELECT * FROM dispute_arbitrators WHERE id=?',(x['id'],))
+        if old and x['generation']<=old['generation']:return {'decision':'stale_arbitrator'}
+        db.execute('INSERT INTO dispute_arbitrators VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET tenant=excluded.tenant,actor=excluded.actor,role=excluded.role,generation=excluded.generation,expires=excluded.expires,state=excluded.state',(x['id'],x['tenant'],x['actor'],x['role'],x['generation'],x['expires'],'active'))
+        return {'decision':'arbitrator_registered'}
     return {'decision':'unknown_operation'}
 
 def run(db,x):return act(db,'permit',x,handle)

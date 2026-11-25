@@ -11,7 +11,8 @@ def handle(db,x):
     if op=='pin':
         o=one(db,'SELECT * FROM dns_observations WHERE id=?',(x['observation'],))
         p=one(db,'SELECT * FROM destination_profiles WHERE id=?',(o['profile'],)) if o else None
-        if not o or o['state']!='accepted' or not p or p['state']!='active' or p['generation']!=o['profile_generation'] or not o['observed']<=x['at']<o['expires']:
+        resolver=one(db,'SELECT * FROM resolver_policies WHERE id=?',(o['resolver_id'],)) if o else None
+        if not o or o['state']!='accepted' or not p or p['state']!='active' or p['generation']!=o['profile_generation'] or not resolver or resolver['state']!='active' or resolver['generation']!=o['resolver_generation'] or not o['observed']<=x['at']<o['expires']:
             return {'decision':'dns_unavailable'}
         db.execute('INSERT INTO dns_pins VALUES(?,?,?,?,?,?)',(x['id'],o['profile'],o['id'],o['ip'],o['expires'],'active'))
         return {'decision':'pinned'}
@@ -24,7 +25,8 @@ def handle(db,x):
         profile=one(db,'SELECT * FROM destination_profiles WHERE id=?',(pin['profile'],)) if pin else None
         if not g or g['state']!='active' or g['holder']!=x['holder'] or not pin or pin['state']!='active' or pin['ip']!=x['ip'] or pin['expires']<=x['at'] or not c or c['state']!='active' or c['profile']!=pin['profile'] or not w or not w['start']<=x['at']<w['expires']:
             return {'decision':'connection_denied'}
-        if not observation or observation['state']!='accepted' or not profile or profile['state']!='active' or profile['generation']!=observation['profile_generation']:
+        resolver=one(db,'SELECT * FROM resolver_policies WHERE id=?',(observation['resolver_id'],)) if observation else None
+        if not observation or observation['state']!='accepted' or not profile or profile['state']!='active' or profile['generation']!=observation['profile_generation'] or not resolver or resolver['state']!='active' or resolver['generation']!=observation['resolver_generation']:
             return {'decision':'dns_identity_changed'}
         outstanding=one(db,"SELECT COALESCE(SUM(reserved),0) n FROM flow_attempts WHERE grant=? AND status='admitted'",(g['id'],))['n']
         if x['bytes']<=0 or outstanding+g['used']+x['bytes']>g['limit_bytes']:
@@ -48,9 +50,11 @@ def handle(db,x):
     if op=='resolve':
         dispute=one(db,'SELECT * FROM settlement_disputes WHERE id=?',(x['dispute'],))
         f=one(db,'SELECT * FROM flow_attempts WHERE id=?',(dispute['flow'],)) if dispute else None
-        if not dispute or dispute['status']!='pending' or not f or f['status']!='admitted' or not x.get('approver') or not 0<=x['approved']<=f['reserved']:
+        g=one(db,'SELECT * FROM egress_grants WHERE id=?',(f['grant'],)) if f else None
+        contract=one(db,'SELECT * FROM purpose_contracts WHERE id=?',(g['contract'],)) if g else None
+        arbitrator=one(db,'SELECT * FROM dispute_arbitrators WHERE id=?',(x['arbitrator'],)) if x.get('arbitrator') else None
+        if not dispute or dispute['status']!='pending' or not f or f['status']!='admitted' or not g or not contract or not arbitrator or arbitrator['state']!='active' or arbitrator['role']!='auditor' or arbitrator['tenant']!=contract['tenant'] or arbitrator['actor']!=x.get('approver') or arbitrator['expires']<x['at'] or not 0<=x['approved']<=f['reserved']:
             return {'decision':'resolution_denied'}
-        g=one(db,'SELECT * FROM egress_grants WHERE id=?',(f['grant'],))
         db.execute('UPDATE settlement_disputes SET approved=?,approver=?,status=? WHERE id=?',(x['approved'],x['approver'],'resolved',x['dispute']))
         db.execute('INSERT INTO verdict_receipts VALUES(?,?,?,?)',(x['id'],f['id'],x['approved'],'settled'))
         db.execute("UPDATE flow_attempts SET status='settled' WHERE id=?",(f['id'],))

@@ -25,13 +25,26 @@ class Business(unittest.TestCase):
         self.assertEqual(flow.run(self.db,{'event_id':'connect','op':'connect','id':'flow-a','grant':'grant-a','pin':'pin-a','holder':'worker-a','ip':'192.0.2.10','at':22,'bytes':30})['decision'],'dns_identity_changed')
         self.assertEqual(flow.run(self.db,{'event_id':'new-pin','op':'pin','id':'pin-new','observation':'answer-a','at':22})['decision'],'dns_unavailable')
 
+    def test_resolver_replacement_and_revocation_fence_old_dns(self):
+        self.base()
+        self.assertEqual(name.run(self.db,{'event_id':'resolver-new','op':'resolver','id':'resolver-a','tenant':'tenant-a','source':'resolver-1','generation':2})['decision'],'resolver_active')
+        self.assertEqual(flow.run(self.db,{'event_id':'old-connect','op':'connect','id':'flow-old','grant':'grant-a','pin':'pin-a','holder':'worker-a','ip':'192.0.2.10','at':22,'bytes':20})['decision'],'dns_identity_changed')
+        self.assertEqual(permit.run(self.db,{'event_id':'new-grant','op':'grant','id':'grant-b','contract':'purpose-a','window':'window-a','holder':'worker-b','limit_bytes':10,'at':22})['decision'],'destination_unresolved')
+        self.assertEqual(name.run(self.db,{'event_id':'new-answer','op':'observe','id':'answer-new','profile':'profile-a','resolver':'resolver-a','source':'resolver-1','ip':'192.0.2.11','generation':2,'observed':22,'expires':100})['decision'],'answer_accepted')
+        self.assertEqual(flow.run(self.db,{'event_id':'new-pin','op':'pin','id':'pin-new','observation':'answer-new','at':23})['decision'],'pinned')
+        self.assertEqual(name.run(self.db,{'event_id':'resolver-revoke','op':'resolver','id':'resolver-a','tenant':'tenant-a','source':'resolver-1','generation':3,'state':'revoked'})['decision'],'resolver_revoked')
+        self.assertEqual(flow.run(self.db,{'event_id':'revoked-connect','op':'connect','id':'flow-revoked','grant':'grant-a','pin':'pin-new','holder':'worker-a','ip':'192.0.2.11','at':24,'bytes':20})['decision'],'dns_identity_changed')
+        self.assertTrue(replay(self.path)['verified'])
+
     def test_quota_and_settlement_change_next_connection(self):
         self.base()
         self.assertEqual(permit.run(self.db,{'event_id':'over-grant','op':'grant','id':'g2','contract':'purpose-a','window':'window-a','holder':'worker-b','limit_bytes':700,'at':20})['decision'],'quota_overcommitted')
         self.assertEqual(flow.run(self.db,{'event_id':'conn','op':'connect','id':'flow-a','grant':'grant-a','pin':'pin-a','holder':'worker-a','ip':'192.0.2.10','at':21,'bytes':300})['decision'],'admitted')
         self.assertEqual(flow.run(self.db,{'event_id':'dispute','op':'settle','id':'bad','flow':'flow-a','actual':301})['decision'],'usage_dispute')
         self.assertEqual(flow.run(self.db,{'event_id':'settle','op':'settle','id':'receipt-a','flow':'flow-a','actual':280})['decision'],'pending_dispute')
-        self.assertEqual(flow.run(self.db,{'event_id':'resolve','op':'resolve','id':'receipt-resolved','dispute':'bad','approved':280,'approver':'auditor-a'})['decision'],'dispute_resolved')
+        permit.run(self.db,{'event_id':'auditor','op':'arbitrator','id':'auditor-a','tenant':'tenant-a','actor':'auditor-a','role':'auditor','generation':1,'at':20,'expires':50})
+        self.assertEqual(flow.run(self.db,{'event_id':'forged','op':'resolve','id':'forged','dispute':'bad','approved':280,'approver':'stranger','arbitrator':'auditor-a','at':23})['decision'],'resolution_denied')
+        self.assertEqual(flow.run(self.db,{'event_id':'resolve','op':'resolve','id':'receipt-resolved','dispute':'bad','approved':280,'approver':'auditor-a','arbitrator':'auditor-a','at':23})['decision'],'dispute_resolved')
         self.assertEqual(flow.run(self.db,{'event_id':'too-many','op':'connect','id':'flow-b','grant':'grant-a','pin':'pin-a','holder':'worker-a','ip':'192.0.2.10','at':22,'bytes':200})['decision'],'grant_exhausted')
         self.assertEqual(one(self.db,'SELECT used FROM quota_windows WHERE id=?',('window-a',))['used'],280)
         self.assertTrue(replay(self.path)['verified'])
