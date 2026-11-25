@@ -1,0 +1,30 @@
+[
+  {
+    "event_id": "n1",
+    "op": "profile",
+    "id": "profile-a",
+    "tenant": "tenant-a",
+    "host": "api.example.invalid",
+    "generation": 1
+  },
+  {
+    "event_id": "n2",
+    "op": "resolver",
+    "id": "resolver-a",
+    "tenant": "tenant-a",
+    "source": "resolver-1",
+    "generation": 1
+  },
+  {
+    "event_id": "n3",
+    "op": "observe",
+    "id": "answer-a",
+    "profile": "profile-a",
+    "resolver": "resolver-a",
+    "source": "resolver-1",
+    "ip": "192.0.2.10",
+    "generation": 1,
+    "observed": 10,
+    "expires": 100
+  }
+]

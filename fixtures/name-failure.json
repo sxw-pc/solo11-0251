@@ -1,0 +1,26 @@
+[
+  {
+    "event_id": "nf1",
+    "op": "observe",
+    "id": "answer-old",
+    "profile": "profile-a",
+    "resolver": "resolver-a",
+    "source": "resolver-1",
+    "ip": "192.0.2.99",
+    "generation": 1,
+    "observed": 11,
+    "expires": 101
+  },
+  {
+    "event_id": "nf2",
+    "op": "observe",
+    "id": "answer-unknown",
+    "profile": "profile-a",
+    "resolver": "resolver-a",
+    "source": "unknown",
+    "ip": "192.0.2.99",
+    "generation": 2,
+    "observed": 11,
+    "expires": 101
+  }
+]

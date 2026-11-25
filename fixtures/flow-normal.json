@@ -1,0 +1,20 @@
+[
+  {
+    "event_id": "f1",
+    "op": "connect",
+    "id": "flow-a",
+    "grant": "grant-a",
+    "pin": "pin-a",
+    "holder": "worker-a",
+    "ip": "192.0.2.10",
+    "at": 21,
+    "bytes": 300
+  },
+  {
+    "event_id": "f2",
+    "op": "settle",
+    "id": "receipt-a",
+    "flow": "flow-a",
+    "actual": 280
+  }
+]

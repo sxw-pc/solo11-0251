@@ -1,0 +1,12 @@
+[
+  {
+    "subsystem": "flow",
+    "payload": {
+      "event_id": "x1",
+      "op": "pin",
+      "id": "pin-a",
+      "observation": "answer-a",
+      "at": 20
+    }
+  }
+]

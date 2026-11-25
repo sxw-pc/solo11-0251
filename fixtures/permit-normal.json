@@ -1,0 +1,29 @@
+[
+  {
+    "event_id": "p1",
+    "op": "purpose",
+    "id": "purpose-a",
+    "tenant": "tenant-a",
+    "profile": "profile-a",
+    "purpose": "fetch-api"
+  },
+  {
+    "event_id": "p2",
+    "op": "quota",
+    "id": "window-a",
+    "tenant": "tenant-a",
+    "capacity": 1000,
+    "start": 10,
+    "expires": 100
+  },
+  {
+    "event_id": "p3",
+    "op": "grant",
+    "id": "grant-a",
+    "contract": "purpose-a",
+    "window": "window-a",
+    "holder": "worker-a",
+    "limit_bytes": 400,
+    "at": 20
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "event_id": "pf1",
+    "op": "grant",
+    "id": "grant-too-big",
+    "contract": "purpose-a",
+    "window": "window-a",
+    "holder": "worker-b",
+    "limit_bytes": 1000,
+    "at": 20
+  },
+  {
+    "event_id": "pf2",
+    "op": "transfer",
+    "id": "grant-a",
+    "from_holder": "wrong-worker",
+    "to_holder": "worker-b",
+    "generation": 2
+  }
+]

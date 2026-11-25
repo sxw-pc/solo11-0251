@@ -1,0 +1,24 @@
+[
+  {
+    "event_id": "ff1",
+    "op": "connect",
+    "id": "flow-wrong-ip",
+    "grant": "grant-a",
+    "pin": "pin-a",
+    "holder": "worker-a",
+    "ip": "192.0.2.99",
+    "at": 22,
+    "bytes": 10
+  },
+  {
+    "event_id": "ff2",
+    "op": "connect",
+    "id": "flow-over-limit",
+    "grant": "grant-a",
+    "pin": "pin-a",
+    "holder": "worker-a",
+    "ip": "192.0.2.10",
+    "at": 22,
+    "bytes": 200
+  }
+]
