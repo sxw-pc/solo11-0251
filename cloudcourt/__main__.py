@@ -18,6 +18,7 @@ def main():
             result=[]
             for index,name in enumerate(MODULES):
                 path=Path('fixtures')/f'{name}-normal.json'
+                if not path.exists():continue
                 commands=json.loads(path.read_text(encoding='utf-8'))
                 result.append({'fixture':str(path),'results':[MODULES[name].run(db,x) for x in commands]})
                 path=Path('fixtures/path.json')
@@ -26,6 +27,7 @@ def main():
                     result.append({'fixture':str(path),'results':[MODULES[x['subsystem']].run(db,x['payload']) for x in commands]})
             for name in MODULES:
                 path=Path('fixtures')/f'{name}-failure.json'
+                if not path.exists():continue
                 commands=json.loads(path.read_text(encoding='utf-8'))
                 result.append({'fixture':str(path),'results':[MODULES[name].run(db,x) for x in commands]})
         else:

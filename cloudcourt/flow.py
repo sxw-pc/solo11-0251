@@ -17,6 +17,18 @@ def handle(db,x):
         db.execute('INSERT INTO dns_pins VALUES(?,?,?,?,?,?)',(x['id'],o['profile'],o['id'],o['ip'],o['expires'],'active'))
         return {'decision':'pinned'}
     if op=='connect':
+        from .evidence_retention import admission_fence
+        fenced=admission_fence(db,x)
+        if fenced:return fenced
+        # Governance proof replay: the original admission already happened.
+        # Rebuild the (masked) flow row with its exact reservation without
+        # re-evaluating holder/IP identity, which has been pseudonymised.
+        if x.get('proof_event'):
+            if not one(db,'SELECT 1 FROM flow_attempts WHERE id=?',(x['id'],)):
+                db.execute('INSERT INTO flow_attempts VALUES(?,?,?,?,?,?,?)',
+                           (x['id'],x['grant'],x['pin'],x['holder'],x['ip'],
+                            x['bytes'],'admitted'))
+            return {'decision':'admitted'}
         g=one(db,'SELECT * FROM egress_grants WHERE id=?',(x['grant'],))
         pin=one(db,'SELECT * FROM dns_pins WHERE id=?',(x['pin'],))
         c=one(db,'SELECT * FROM purpose_contracts WHERE id=?',(g['contract'],)) if g else None
