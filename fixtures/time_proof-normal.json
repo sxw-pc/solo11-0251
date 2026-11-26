@@ -1,0 +1,94 @@
+[
+  {
+    "event_id": "fx-e1",
+    "op": "evidence",
+    "id": "fx-ocxo",
+    "site": "fx",
+    "chain": "local-ocxo",
+    "upstream": "self",
+    "direct": true,
+    "observed_local": 1000,
+    "offset_ms": 0,
+    "uncertainty_ms": 1,
+    "calibration": "cal-fx-1",
+    "calibration_uncertainty_ms": 1,
+    "drift_ppm": 0.0
+  },
+  {
+    "event_id": "fx-e2",
+    "op": "evidence",
+    "id": "fx-ground",
+    "site": "fx",
+    "chain": "ptp-ground-a",
+    "upstream": "terrestrial-fx",
+    "observed_local": 1200,
+    "offset_ms": 0,
+    "uncertainty_ms": 1,
+    "calibration": "cal-fx-2",
+    "calibration_uncertainty_ms": 1
+  },
+  {
+    "event_id": "fx-e3",
+    "op": "calibrate",
+    "id": "fx-ground",
+    "transport": {"min_ms": 2, "max_ms": 4, "rtt_ms": 6},
+    "at": 1300
+  },
+  {
+    "event_id": "fx-e4",
+    "op": "issue",
+    "id": "fx-p1",
+    "site": "fx",
+    "issuer": "attester-fx",
+    "event_digest": "digest-1",
+    "local_ms": 5000,
+    "at": 5001
+  },
+  {
+    "event_id": "fx-e5",
+    "op": "deliver",
+    "id": "fx-d1",
+    "proof": "fx-p1",
+    "recipient": "customer-fx",
+    "kind": "original",
+    "at": 5002
+  },
+  {
+    "event_id": "fx-e6",
+    "op": "ack",
+    "id": "fx-d1",
+    "at": 5003
+  },
+  {
+    "event_id": "fx-e7",
+    "op": "distrust",
+    "id": "fx-ocxo"
+  },
+  {
+    "event_id": "fx-e8",
+    "op": "issue",
+    "id": "fx-p2",
+    "site": "fx",
+    "issuer": "attester-fx",
+    "corrects": "fx-p1",
+    "at": 6000
+  },
+  {
+    "event_id": "fx-e9",
+    "op": "ack",
+    "id": "fx-p2:customer-fx",
+    "at": 6001
+  },
+  {
+    "event_id": "fx-e10",
+    "op": "revoke",
+    "id": "fx-p1",
+    "at": 6002
+  },
+  {
+    "event_id": "fx-e11",
+    "op": "ack",
+    "id": "rev:fx-p1:customer-fx",
+    "at": 6003
+  }
+]
