@@ -10,6 +10,14 @@ def connect(path):
     from . import MODULES
     for module in MODULES.values():
         db.executescript(module.SCHEMA)
+        migrate=getattr(module,'MIGRATIONS',None)
+        if migrate:
+            for table,column,decl in migrate:
+                exists=db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(table,)).fetchone()
+                if not exists:continue
+                cols={r[1] for r in db.execute(f'PRAGMA table_info({table})')}
+                if column not in cols:
+                    db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {decl}')
     return db
 
 @contextmanager

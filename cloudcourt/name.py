@@ -49,4 +49,6 @@ def handle(db,x):
         return {'decision':'destination_quarantined'}
     return {'decision':'unknown_operation'}
 
-def run(db,x):return act(db,'name',x,handle)
+def run(db,x):
+    from .tokens import shape
+    return shape(act(db,'name',x,handle))
