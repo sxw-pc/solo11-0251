@@ -2,13 +2,14 @@
 
 离线租户出站控制面模拟。只裁决租户能否使用已有外部目的地、DNS 解析 IP 和用途额度；不管理域名所有权、证书或 Ingress，也不发起真实 DNS/网络请求。运行环境为 Python 3.11+ 标准库与 SQLite。
 
-## 三个入口
+## 入口
 
 - `name`：目的地档案、解析源策略和带 TTL 的 DNS 观测。档案换代、未知解析源、旧答案或隔离结果都不能钉住 IP。可疑已准入连接触发目的地复核与隔离。
 - `permit`：用途合同、租户额度窗口及出站使用许可。准入前检查目的地档案与新鲜解析证据；转让冻结旧持有人，撤销隔离未结连接。
 - `flow`：DNS 钉住、连接尝试、真实字节结算与可疑行为回执。许可持有人、目标 IP、期限和余额共同决定连接；超额结算拒绝，成功结算改变下次可用量。
+- `rf`：机房射频干扰解析。测量绑定仪表校准、天线方向、频点带宽、测点、时间和设备负荷；五组受控停机试验只做归因诊断，不产出静态干扰源标签。工程改造后按实测配置逐段限定旧测量，交付需实测联合尖峰复测、邻站在原接收位置的签收、客户解析容量/时延/上联确认和监管提交指向同一配置；拆除滤波器、重新启用旧电源或监管撤回都会使旧放行失效。
 
-三个入口各有独立业务状态表和正常/失败 fixture。事件 ID 重试幂等，同 ID 异内容拒绝；事件重放逐表比较当前状态。
+四个入口各有独立业务状态表和正常/失败 fixture。事件 ID 重试幂等，同 ID 异内容拒绝；事件重放逐表比较当前状态。
 
 ## 运行
 
@@ -18,8 +19,18 @@ python -m cloudcourt replay --db demo.sqlite
 python -m unittest discover -s tests -v
 ```
 
-独立入口示例：`python -m cloudcourt name --db state.sqlite --fixture fixtures/name-normal.json`。同一个数据库可依次运行 `name`、`permit`、`flow` 的正常样例；`fixtures/path.json` 创建跨系统 DNS 钉住。每个入口的 `-failure.json` 给出旧解析、超额授权或错误 IP 等反例。
+独立入口示例：`python -m cloudcourt name --db state.sqlite --fixture fixtures/name-normal.json`。同一个数据库可依次运行 `name`、`permit`、`flow`、`rf` 的正常样例；`fixtures/path.json` 创建跨系统 DNS 钉住。每个入口的 `-failure.json` 给出旧解析、超额授权、错误 IP 或只做滤波即放行等反例。
 
 测试覆盖解析代次、档案换代、额度超拨、连接结算、撤销与可疑连接导致的目的地隔离。业务结论可在 `destination_profiles`、`egress_grants`、`flow_attempts` 和原始事件中核实。
 
 解析观测绑定解析器 ID 与代次；解析器换代或撤销后，旧 DNS 钉住不能继续授权连接。超额结算进入 `settlement_disputes`，只有与租户匹配、仍在有效期内的审计员记录才能批准纠正数额。
+
+## 射频解析要点
+
+- 采样 `rf_samples` 每条都带 `config`、`point`、`load_pct`、`bandwidth_khz`、`antenna` 和 `calibrated_until`。空载低值不能覆盖同配置的高负荷超标，其他测点或其他配置的读数也不能借用。
+- `provisional` 只在该配置与测点范围内给出临时状态；它不代表邻站已验收，也不代表客户容量已确认。
+- `diagnose` 读取同一次实验的四组组合（双开、只电源、只回传、双关）并给出候选与未排除项：两个独立泄漏源、共用接地非线性耦合、邻站互调或接收机压缩。任一侧单独关闭仍超邻站验收，会明确记为“单独动作不足”，不会被最后一次读数选成单一电源标签。
+- `action` 按 `in_place`（滤波、桥架接地、调功率）或 `separation`（屋顶天线迁移 + 异地解析机柜）分支登记工程动作，动作前配置的临时放行立即撤回。两项迁移都需先有许可屋顶位置和已验收机柜上联。
+- `retest` 只接受本地联合尖峰复测：双方设备保持运行、邻站在原接收位置、仪表在校准有效期内、邻站验收条件已按新配置重登记。全关矩阵会中断两方业务，直接拒绝。
+- `neighbor`、`customer`、`submit` 都必须引用同一次通过的复测；差异测点或配置会被拒绝。`resolution` 只报告同一配置上复测与双方签收齐全的分支为 `delivered`，其余配置保留为 `unverified` 空窗并分别给出邻站与客户的临时服务状态。
+- 拆除滤波 `remove_filter`、重新启用旧电源 `revert_psu` 或 `regulator_withdraw` 会让旧签收、旧提交和旧放行失效。
