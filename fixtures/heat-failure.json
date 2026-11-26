@@ -1,0 +1,6 @@
+[
+  {"event_id": "h-fail-reading", "op": "reading", "id": "h-ghost", "meter": "missing-meter", "site": "heat-site", "raw_start": 0, "raw_end": 100, "kwh": 10, "calibration": "none", "at": 1},
+  {"event_id": "h-fail-contract", "op": "contract", "id": "h-KF", "site": "heat-site", "buyer": "buyer-X", "minimum_kwh": 10, "base_rate": 10, "over_rate": 12, "shortfall_rate": 2, "reject_delta": 15, "at": 1},
+  {"event_id": "h-fail-reconcile", "op": "reconcile", "id": "h-PF", "site": "heat-site", "start_at": 0, "end_at": 600, "at": 2},
+  {"event_id": "h-fail-unknown", "op": "vent", "id": "h-unknown", "at": 3}
+]

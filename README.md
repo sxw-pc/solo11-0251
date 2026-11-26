@@ -23,3 +23,14 @@ python -m unittest discover -s tests -v
 测试覆盖解析代次、档案换代、额度超拨、连接结算、撤销与可疑连接导致的目的地隔离。业务结论可在 `destination_profiles`、`egress_grants`、`flow_attempts` 和原始事件中核实。
 
 解析观测绑定解析器 ID 与代次；解析器换代或撤销后，旧 DNS 钉住不能继续授权连接。超额结算进入 `settlement_disputes`，只有与租户匹配、仍在有效期内的审计员记录才能批准纠正数额。
+
+## 余热交付核定（heat_reconciliation）
+
+机房把解析设备余热卖给相邻买家时，主管道总表只证明出口热量，不能证明任一买家实收。`heat_reconciliation` 把物理证据与资金事实分开保存，直到合同授权的决议把两者连接：
+
+- 读数保留表计本地原始区间，时钟偏移归一化到统一时间线；错位边界的热量进入 `heat_uncertain_intervals`，不静默摊给任何客户。
+- 支管读数按拒收通知与校准证书有效期切分，逐段归类为可证实交付、待争议热量（`buyer_rejection`、`calibration_expired`、`backfilled_reading`、`clock_skew_boundary`、`meter_over_reading`）或机房侧管损。
+- 校准有效的主管道出口是硬上限：任何客户开票累计不得超过它；冷机自用热不计入买家账单；未知值不进入客户余额。
+- 两种履约方式均有记录：`retest`（共同复测为最终依据，先仅按可证实量开临时账单，复测确认的增量净额补票）与 `provisional_capped`（上限临时结算，争议部分款项进托管账户，迟到复校证书只产生引用原账单/原付款的退款或补款，永不重写已送达账单）。
+- 复测为最终依据后迟到的复校证书只留证、不改账；`rebuild_accounts` 从同一批物理证据重建两种决议各自合法的账，资金事实只出现在实际授权的路径下。
+

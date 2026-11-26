@@ -1,0 +1,12 @@
+[
+  {"event_id": "h-branch-a", "op": "branch", "id": "h-ma", "site": "heat-site", "buyer": "buyer-A", "installed_at": -1000, "at": 1},
+  {"event_id": "h-branch-b", "op": "branch", "id": "h-mb", "site": "heat-site", "buyer": "buyer-B", "installed_at": -1000, "at": 1},
+  {"event_id": "h-clock-a", "op": "clock", "id": "h-ca", "meter": "h-ma", "offset_seconds": 300, "observed_at": -10, "applies_from": -1000, "applies_to": 100000, "at": 1},
+  {"event_id": "h-clock-b", "op": "clock", "id": "h-cb", "meter": "h-mb", "offset_seconds": 300, "observed_at": -10, "applies_from": -1000, "applies_to": 100000, "at": 1},
+  {"event_id": "h-cert-a", "op": "certificate", "id": "h-CA", "meter": "h-ma", "valid_from": -100, "valid_until": 100000, "issued_at": -100, "evidence": "seal-a", "at": 1},
+  {"event_id": "h-cert-b", "op": "certificate", "id": "h-CB", "meter": "h-mb", "valid_from": -100, "valid_until": 100000, "issued_at": -100, "evidence": "seal-b", "at": 1},
+  {"event_id": "h-contract-a", "op": "contract", "id": "h-KA", "site": "heat-site", "buyer": "buyer-A", "minimum_kwh": 40, "base_rate": 10, "over_rate": 12, "shortfall_rate": 3, "reject_delta": 15, "at": 1},
+  {"event_id": "h-contract-b", "op": "contract", "id": "h-KB", "site": "heat-site", "buyer": "buyer-B", "minimum_kwh": 40, "base_rate": 10, "over_rate": 14, "shortfall_rate": 2, "reject_delta": 15, "at": 1},
+  {"event_id": "h-read-a", "op": "reading", "id": "h-ra", "meter": "h-ma", "site": "heat-site", "raw_start": 300, "raw_end": 900, "kwh": 40, "calibration": "h-CA", "at": 2},
+  {"event_id": "h-read-b", "op": "reading", "id": "h-rb", "meter": "h-mb", "site": "heat-site", "raw_start": 300, "raw_end": 900, "kwh": 35, "calibration": "h-CB", "at": 2}
+]

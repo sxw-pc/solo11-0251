@@ -1,4 +1,4 @@
-import json, sqlite3
+import json, sqlite3, sys
 from contextlib import contextmanager
 
 def connect(path):
@@ -34,6 +34,16 @@ def many(db,query,args=()):
     return [dict(x) for x in db.execute(query,args)]
 
 def act(db,subsystem,payload,handler):
+    # DDL inside an open transaction would auto-commit it and release the
+    # savepoints below, so every module's schema must exist before tx() opens.
+    module=sys.modules.get(handler.__module__)
+    if module is not None and hasattr(module,'ensure_schema'):
+        module.ensure_schema(db)
+    else:
+        from . import MODULES
+        for mod in MODULES.values():
+            if hasattr(mod,'SCHEMA'):
+                db.executescript(mod.SCHEMA)
     with tx(db):
         event_id=payload['event_id']
         encoded=json.dumps(payload,sort_keys=True,ensure_ascii=False)
